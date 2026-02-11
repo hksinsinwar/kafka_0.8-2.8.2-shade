@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -11,12 +12,17 @@ import kafka.javaapi.producer.Producer;
 import org.junit.jupiter.api.Test;
 
 class V08KafkaAdapterTest {
+    private static final Charset UTF8 = Charset.forName("UTF-8");
 
     @Test
     void producerDelegatesSend() {
         @SuppressWarnings("unchecked")
-        Producer<String, String> delegate = (Producer<String, String>) mock(Producer.class);
-        V08KafkaProducerAdapter<String, String> adapter = new V08KafkaProducerAdapter<String, String>(delegate);
+        Producer<byte[], byte[]> delegate = (Producer<byte[], byte[]>) mock(Producer.class);
+        V08KafkaProducerAdapter<String, String> adapter = new V08KafkaProducerAdapter<String, String>(
+            delegate,
+            KafkaSerDes.utf8String(),
+            KafkaSerDes.utf8String()
+        );
 
         adapter.send("topic", "key", "value");
 
@@ -33,7 +39,13 @@ class V08KafkaAdapterTest {
 
                 @Override
                 public List<KafkaRecord<String, String>> poll(long timeoutMs) {
-                    return Collections.singletonList(new KafkaRecord<String, String>("legacy", "k", "v"));
+                    return Collections.singletonList(
+                        new KafkaRecord<String, String>(
+                            "legacy",
+                            new String("k".getBytes(UTF8), UTF8),
+                            new String("v".getBytes(UTF8), UTF8)
+                        )
+                    );
                 }
 
                 @Override

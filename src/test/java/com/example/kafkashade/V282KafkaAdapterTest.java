@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -17,12 +18,17 @@ import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.Test;
 
 class V282KafkaAdapterTest {
+    private static final Charset UTF8 = Charset.forName("UTF-8");
 
     @Test
-    void producerDelegatesSend() {
+    void producerDelegatesSendWithSerializedBytes() {
         @SuppressWarnings("unchecked")
-        Producer<String, String> delegate = (Producer<String, String>) mock(Producer.class);
-        V282KafkaProducerAdapter<String, String> adapter = new V282KafkaProducerAdapter<String, String>(delegate);
+        Producer<byte[], byte[]> delegate = (Producer<byte[], byte[]>) mock(Producer.class);
+        V282KafkaProducerAdapter<String, String> adapter = new V282KafkaProducerAdapter<String, String>(
+            delegate,
+            KafkaSerDes.utf8String(),
+            KafkaSerDes.utf8String()
+        );
 
         adapter.send("t", "k", "v");
 
@@ -30,18 +36,28 @@ class V282KafkaAdapterTest {
     }
 
     @Test
-    void consumerConvertsPolledRecords() {
+    void consumerConvertsPolledRecordsFromBytes() {
         @SuppressWarnings("unchecked")
-        Consumer<String, String> delegate = (Consumer<String, String>) mock(Consumer.class);
-        ConsumerRecord<String, String> rec = new ConsumerRecord<String, String>("topic", 0, 0L, "k1", "v1");
+        Consumer<byte[], byte[]> delegate = (Consumer<byte[], byte[]>) mock(Consumer.class);
+        ConsumerRecord<byte[], byte[]> rec = new ConsumerRecord<byte[], byte[]>(
+            "topic",
+            0,
+            0L,
+            "k1".getBytes(UTF8),
+            "v1".getBytes(UTF8)
+        );
         TopicPartition tp = new TopicPartition("topic", 0);
-        ConsumerRecords<String, String> records = new ConsumerRecords<String, String>(
+        ConsumerRecords<byte[], byte[]> records = new ConsumerRecords<byte[], byte[]>(
             Collections.singletonMap(tp, Arrays.asList(rec))
         );
 
         when(delegate.poll(any())).thenReturn(records);
 
-        V282KafkaConsumerAdapter<String, String> adapter = new V282KafkaConsumerAdapter<String, String>(delegate);
+        V282KafkaConsumerAdapter<String, String> adapter = new V282KafkaConsumerAdapter<String, String>(
+            delegate,
+            KafkaSerDes.utf8String(),
+            KafkaSerDes.utf8String()
+        );
         List<KafkaRecord<String, String>> got = adapter.poll(100L);
 
         assertEquals(1, got.size());

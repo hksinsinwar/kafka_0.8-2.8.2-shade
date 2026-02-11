@@ -7,6 +7,8 @@ This project provides a single Java 8 generic API (`<K,V>`) that can drive **Kaf
 - Supports producer and consumer abstractions for both versions:
   - `KafkaVersion.V0_8`
   - `KafkaVersion.V2_8_2`
+- Uses `byte[]` as the internal transport payload for both client versions.
+- Abstracts serialization/deserialization via wrappers (`KafkaSerDe`) so clients keep generic types while adapters send/receive bytes.
 - Creates a shaded artifact so both Kafka dependency trees can coexist.
 - Lets users switch Kafka version at runtime via `KafkaClientConfig`.
 
@@ -34,10 +36,23 @@ The shaded jar is generated as:
 
 ## Usage
 
+### Default `byte[]` mode (no custom serde needed)
+
+```java
+KafkaClientConfig<byte[], byte[]> config = KafkaClientConfig.<byte[], byte[]>builder(KafkaVersion.V2_8_2)
+    .bootstrapServers("localhost:9092")
+    .groupId("my-group")
+    .build();
+```
+
+### Generic mode with serde wrappers
+
 ```java
 KafkaClientConfig<String, String> config = KafkaClientConfig.<String, String>builder(KafkaVersion.V2_8_2)
     .bootstrapServers("localhost:9092")
     .groupId("my-group")
+    .keySerDe(KafkaSerDes.utf8String())
+    .valueSerDe(KafkaSerDes.utf8String())
     .build();
 
 UnifiedKafkaProducer<String, String> producer = KafkaClientFactory.createProducer(config);
@@ -60,6 +75,8 @@ KafkaClientConfig<String, String> legacyConfig = KafkaClientConfig.<String, Stri
     .bootstrapServers("localhost:9092")
     .zookeeperConnect("localhost:2181")
     .groupId("legacy-group")
+    .keySerDe(KafkaSerDes.utf8String())
+    .valueSerDe(KafkaSerDes.utf8String())
     .build();
 ```
 
@@ -67,6 +84,9 @@ KafkaClientConfig<String, String> legacyConfig = KafkaClientConfig.<String, Stri
 
 - `KafkaClientFactory` – version switch / adapter factory
 - `UnifiedKafkaProducer` / `UnifiedKafkaConsumer` – common abstractions
+- `KafkaSerDe`, `ByteSerializer`, `ByteDeserializer`, `KafkaSerDes` – generic serializer/deserializer wrapper layer
+- `V08*Adapter` – Kafka 0.8 adapter implementations (byte transport + serde wrappers)
+- `V282*Adapter` – Kafka 2.8.2 adapter implementations (byte transport + serde wrappers)
 - `V08*Adapter` – Kafka 0.8 adapter implementations
 - `V282*Adapter` – Kafka 2.8.2 adapter implementations
 

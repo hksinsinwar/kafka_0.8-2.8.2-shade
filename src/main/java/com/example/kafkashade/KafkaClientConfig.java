@@ -12,8 +12,8 @@ public final class KafkaClientConfig<K, V> {
     private final String clientId;
     private final String groupId;
     private final Map<String, String> extraProperties;
-    private final LegacyDecoder<K> legacyKeyDecoder;
-    private final LegacyDecoder<V> legacyValueDecoder;
+    private final KafkaSerDe<K> keySerDe;
+    private final KafkaSerDe<V> valueSerDe;
 
     private KafkaClientConfig(Builder<K, V> builder) {
         this.version = builder.version;
@@ -22,8 +22,8 @@ public final class KafkaClientConfig<K, V> {
         this.clientId = builder.clientId;
         this.groupId = builder.groupId;
         this.extraProperties = Collections.unmodifiableMap(new HashMap<String, String>(builder.extraProperties));
-        this.legacyKeyDecoder = builder.legacyKeyDecoder;
-        this.legacyValueDecoder = builder.legacyValueDecoder;
+        this.keySerDe = builder.keySerDe;
+        this.valueSerDe = builder.valueSerDe;
     }
 
     public KafkaVersion getVersion() {
@@ -50,12 +50,12 @@ public final class KafkaClientConfig<K, V> {
         return extraProperties;
     }
 
-    public LegacyDecoder<K> getLegacyKeyDecoder() {
-        return legacyKeyDecoder;
+    public KafkaSerDe<K> getKeySerDe() {
+        return keySerDe;
     }
 
-    public LegacyDecoder<V> getLegacyValueDecoder() {
-        return legacyValueDecoder;
+    public KafkaSerDe<V> getValueSerDe() {
+        return valueSerDe;
     }
 
     public static <K, V> Builder<K, V> builder(KafkaVersion version) {
@@ -63,7 +63,6 @@ public final class KafkaClientConfig<K, V> {
     }
 
     public static final class Builder<K, V> {
-        private static final Charset UTF8 = Charset.forName("UTF-8");
 
         private final KafkaVersion version;
         private String bootstrapServers = "localhost:9092";
@@ -71,25 +70,18 @@ public final class KafkaClientConfig<K, V> {
         private String clientId = "kafka-shaded-bridge";
         private String groupId = "kafka-shaded-bridge-group";
         private final Map<String, String> extraProperties = new HashMap<String, String>();
-        private LegacyDecoder<K> legacyKeyDecoder;
-        private LegacyDecoder<V> legacyValueDecoder;
+        private KafkaSerDe<K> keySerDe;
+        private KafkaSerDe<V> valueSerDe;
 
         private Builder(KafkaVersion version) {
             this.version = version;
-            this.legacyKeyDecoder = new LegacyDecoder<K>() {
-                @SuppressWarnings("unchecked")
-                @Override
-                public K decode(byte[] data) {
-                    return (K) (data == null ? null : new String(data, UTF8));
-                }
-            };
-            this.legacyValueDecoder = new LegacyDecoder<V>() {
-                @SuppressWarnings("unchecked")
-                @Override
-                public V decode(byte[] data) {
-                    return (V) (data == null ? null : new String(data, UTF8));
-                }
-            };
+            this.keySerDe = defaultBytesSerDe();
+            this.valueSerDe = defaultBytesSerDe();
+        }
+
+        @SuppressWarnings("unchecked")
+        private static <T> KafkaSerDe<T> defaultBytesSerDe() {
+            return (KafkaSerDe<T>) KafkaSerDes.bytes();
         }
 
         public Builder<K, V> bootstrapServers(String bootstrapServers) {
@@ -117,13 +109,13 @@ public final class KafkaClientConfig<K, V> {
             return this;
         }
 
-        public Builder<K, V> legacyKeyDecoder(LegacyDecoder<K> legacyKeyDecoder) {
-            this.legacyKeyDecoder = legacyKeyDecoder;
+        public Builder<K, V> keySerDe(KafkaSerDe<K> keySerDe) {
+            this.keySerDe = keySerDe;
             return this;
         }
 
-        public Builder<K, V> legacyValueDecoder(LegacyDecoder<V> legacyValueDecoder) {
-            this.legacyValueDecoder = legacyValueDecoder;
+        public Builder<K, V> valueSerDe(KafkaSerDe<V> valueSerDe) {
+            this.valueSerDe = valueSerDe;
             return this;
         }
 

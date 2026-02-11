@@ -27,19 +27,19 @@ final class V08KafkaConsumerAdapter<K, V> implements UnifiedKafkaConsumer<K, V> 
 
     static final class Kafka08LegacyConsumer<K, V> implements LegacyConsumer<K, V> {
         private final ConsumerConnector consumerConnector;
-        private final LegacyDecoder<K> keyDecoder;
-        private final LegacyDecoder<V> valueDecoder;
+        private final KafkaSerDe<K> keySerDe;
+        private final KafkaSerDe<V> valueSerDe;
         private final Map<String, List<KafkaStream<byte[], byte[]>>> streamsByTopic =
             new HashMap<String, List<KafkaStream<byte[], byte[]>>>();
 
         Kafka08LegacyConsumer(
             ConsumerConnector consumerConnector,
-            LegacyDecoder<K> keyDecoder,
-            LegacyDecoder<V> valueDecoder
+            KafkaSerDe<K> keySerDe,
+            KafkaSerDe<V> valueSerDe
         ) {
             this.consumerConnector = consumerConnector;
-            this.keyDecoder = keyDecoder;
-            this.valueDecoder = valueDecoder;
+            this.keySerDe = keySerDe;
+            this.valueSerDe = valueSerDe;
         }
 
         static <K, V> Kafka08LegacyConsumer<K, V> fromConfig(KafkaClientConfig<K, V> config) {
@@ -52,8 +52,8 @@ final class V08KafkaConsumerAdapter<K, V> implements UnifiedKafkaConsumer<K, V> 
             ConsumerConfig consumerConfig = new ConsumerConfig(properties);
             return new Kafka08LegacyConsumer<K, V>(
                 Consumer.createJavaConsumerConnector(consumerConfig),
-                config.getLegacyKeyDecoder(),
-                config.getLegacyValueDecoder()
+                config.getKeySerDe(),
+                config.getValueSerDe()
             );
         }
 
@@ -77,8 +77,8 @@ final class V08KafkaConsumerAdapter<K, V> implements UnifiedKafkaConsumer<K, V> 
                     while (true) {
                         try {
                             MessageAndMetadata<byte[], byte[]> message = iterator.next();
-                            K key = keyDecoder.decode(message.key());
-                            V value = valueDecoder.decode(message.message());
+                            K key = keySerDe.deserialize(message.key());
+                            V value = valueSerDe.deserialize(message.message());
                             records.add(new KafkaRecord<K, V>(topic, key, value));
                         } catch (ConsumerTimeoutException timeout) {
                             break;
