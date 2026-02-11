@@ -1,6 +1,6 @@
 # Kafka 0.8 + 2.8.2 shaded bridge (Java 8 / Maven)
 
-This project provides a single Java 8 API that can drive **Kafka 0.8** and **Kafka 2.8.2** clients.
+This project provides a single Java 8 generic API (`<K,V>`) that can drive **Kafka 0.8** and **Kafka 2.8.2** clients.
 
 ## What this solves
 
@@ -35,25 +35,28 @@ The shaded jar is generated as:
 ## Usage
 
 ```java
-KafkaClientConfig config = KafkaClientConfig.builder(KafkaVersion.V2_8_2)
+KafkaClientConfig<String, String> config = KafkaClientConfig.<String, String>builder(KafkaVersion.V2_8_2)
     .bootstrapServers("localhost:9092")
     .groupId("my-group")
     .build();
 
-UnifiedKafkaProducer producer = KafkaClientFactory.createProducer(config);
+UnifiedKafkaProducer<String, String> producer = KafkaClientFactory.createProducer(config);
 producer.send("topic-a", "k1", "hello");
 producer.close();
 
-UnifiedKafkaConsumer consumer = KafkaClientFactory.createConsumer(config);
+UnifiedKafkaConsumer<String, String> consumer = KafkaClientFactory.createConsumer(config);
 consumer.subscribe(Arrays.asList("topic-a"));
-List<KafkaRecord> records = consumer.poll(1000L);
+List<KafkaRecord<String, String>> records = consumer.poll(1000L);
 consumer.close();
 ```
+
+
+For Kafka 2.8.2 typed use, set deserializer/serializer classes through `put(...)` (for example `key.serializer`, `value.serializer`, `key.deserializer`, `value.deserializer`).
 
 For Kafka 0.8 consumers, configure ZooKeeper:
 
 ```java
-KafkaClientConfig legacyConfig = KafkaClientConfig.builder(KafkaVersion.V0_8)
+KafkaClientConfig<String, String> legacyConfig = KafkaClientConfig.<String, String>builder(KafkaVersion.V0_8)
     .bootstrapServers("localhost:9092")
     .zookeeperConnect("localhost:2181")
     .groupId("legacy-group")

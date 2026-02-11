@@ -22,7 +22,7 @@ class V282KafkaAdapterTest {
     void producerDelegatesSend() {
         @SuppressWarnings("unchecked")
         Producer<String, String> delegate = (Producer<String, String>) mock(Producer.class);
-        V282KafkaProducerAdapter adapter = new V282KafkaProducerAdapter(delegate);
+        V282KafkaProducerAdapter<String, String> adapter = new V282KafkaProducerAdapter<String, String>(delegate);
 
         adapter.send("t", "k", "v");
 
@@ -41,8 +41,8 @@ class V282KafkaAdapterTest {
 
         when(delegate.poll(any())).thenReturn(records);
 
-        V282KafkaConsumerAdapter adapter = new V282KafkaConsumerAdapter(delegate);
-        List<KafkaRecord> got = adapter.poll(100L);
+        V282KafkaConsumerAdapter<String, String> adapter = new V282KafkaConsumerAdapter<String, String>(delegate);
+        List<KafkaRecord<String, String>> got = adapter.poll(100L);
 
         assertEquals(1, got.size());
         assertEquals("topic", got.get(0).getTopic());

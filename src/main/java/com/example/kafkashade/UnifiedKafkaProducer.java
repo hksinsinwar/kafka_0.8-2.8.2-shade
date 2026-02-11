@@ -1,7 +1,7 @@
 package com.example.kafkashade;
 
-public interface UnifiedKafkaProducer extends AutoCloseable {
-    void send(String topic, String key, String value);
+public interface UnifiedKafkaProducer<K, V> extends AutoCloseable {
+    void send(String topic, K key, V value);
 
     @Override
     void close();

@@ -1,11 +1,11 @@
 package com.example.kafkashade;
 
-public final class KafkaRecord {
+public final class KafkaRecord<K, V> {
     private final String topic;
-    private final String key;
-    private final String value;
+    private final K key;
+    private final V value;
 
-    public KafkaRecord(String topic, String key, String value) {
+    public KafkaRecord(String topic, K key, V value) {
         this.topic = topic;
         this.key = key;
         this.value = value;
@@ -15,11 +15,11 @@ public final class KafkaRecord {
         return topic;
     }
 
-    public String getKey() {
+    public K getKey() {
         return key;
     }
 
-    public String getValue() {
+    public V getValue() {
         return value;
     }
 }
