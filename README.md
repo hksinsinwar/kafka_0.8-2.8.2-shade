@@ -65,6 +65,9 @@ List<KafkaRecord<String, String>> records = consumer.poll(1000L);
 consumer.close();
 ```
 
+
+For Kafka 2.8.2 typed use, set deserializer/serializer classes through `put(...)` (for example `key.serializer`, `value.serializer`, `key.deserializer`, `value.deserializer`).
+
 For Kafka 0.8 consumers, configure ZooKeeper:
 
 ```java
@@ -84,6 +87,8 @@ KafkaClientConfig<String, String> legacyConfig = KafkaClientConfig.<String, Stri
 - `KafkaSerDe`, `ByteSerializer`, `ByteDeserializer`, `KafkaSerDes` – generic serializer/deserializer wrapper layer
 - `V08*Adapter` – Kafka 0.8 adapter implementations (byte transport + serde wrappers)
 - `V282*Adapter` – Kafka 2.8.2 adapter implementations (byte transport + serde wrappers)
+- `V08*Adapter` – Kafka 0.8 adapter implementations
+- `V282*Adapter` – Kafka 2.8.2 adapter implementations
 
 ## Notes
 
